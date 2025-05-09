@@ -190,32 +190,51 @@ def run_amendment_logic(find_word, replace_word):
         articles = tree.findall(".//조문단위")
         덩어리별 = defaultdict(list)
 
-        for article in articles:
-            조번호 = article.findtext("조문번호", "").strip()
-            조가지번호 = article.findtext("조문가지번호", "").strip()
-            조문식별자 = make_article_number(조번호, 조가지번호)
-            조문내용 = article.findtext("조문내용", "") or ""
+for article in articles:
+    # ... (조문내용 처리)
+    for 항 in article.findall("항"):
+        # 항내용 처리
+        항번호 = normalize_number(항.findtext("항번호", "").strip())
+        항내용 = 항.findtext("항내용", "") or ""
+        tokens = re.findall(r'[가-힣A-Za-z0-9]+', 항내용)
+        for token in tokens:
+            if find_word in token:
+                chunk, josa = extract_chunk_and_josa(token, find_word)
+                바꿀덩어리 = chunk.replace(find_word, replace_word)
+                loc_str = f"제{조번호}"
+                if 조가지번호:
+                    loc_str += f"제{조가지번호}"
+                loc_str += f"조제{항번호}항"
+                chunk_map.setdefault((chunk, 바꿀덩어리, josa), []).append(loc_str)
+        for 호 in 항.findall("호"):
+            # 호내용 처리
+            호번호 = 호.findtext("호번호", "").strip().replace(".", "")
+            호내용 = 호.findtext("호내용", "") or ""
+            tokens = re.findall(r'[가-힣A-Za-z0-9]+', 호내용)
+            for token in tokens:
+                if find_word in token:
+                    chunk, josa = extract_chunk_and_josa(token, find_word)
+                    바꿀덩어리 = chunk.replace(find_word, replace_word)
+                    loc_str = f"제{조번호}"
+                    if 조가지번호:
+                        loc_str += f"제{조가지번호}"
+                    loc_str += f"조제{항번호}항제{호번호}호"
+                    chunk_map.setdefault((chunk, 바꿀덩어리, josa), []).append(loc_str)
+            for 목 in 호.findall("목"):
+                목번호 = 목.findtext("목번호", "").strip().replace(".", "")
+                for m in 목.findall("목내용"):
+                    if m.text:
+                        tokens = re.findall(r'[가-힣A-Za-z0-9]+', m.text)
+                        for token in tokens:
+                            if find_word in token:
+                                chunk, josa = extract_chunk_and_josa(token, find_word)
+                                바꿀덩어리 = chunk.replace(find_word, replace_word)
+                                loc_str = f"제{조번호}"
+                                if 조가지번호:
+                                    loc_str += f"제{조가지번호}"
+                                loc_str += f"조제{항번호}항제{호번호}호제{목번호}목"
+                                chunk_map.setdefault((chunk, 바꿀덩어리, josa), []).append(loc_str)
 
-            if find_word in 조문내용:
-                덩어리별[find_word].append((조문식별자, None, None, None, None))
-
-            for 항 in article.findall("항"):
-                항번호 = normalize_number(항.findtext("항번호", "").strip())
-                항내용 = 항.findtext("항내용", "") or ""
-                if find_word in 항내용:
-                    덩어리별[find_word].append((조문식별자, 항번호, None, None, None))
-
-                for 호 in 항.findall("호"):
-                    호번호 = 호.findtext("호번호", "").strip().replace(".", "")
-                    호내용 = 호.findtext("호내용", "") or ""
-                    if find_word in 호내용:
-                        덩어리별[find_word].append((조문식별자, 항번호, 호번호, None, None))
-
-                    for 목 in 호.findall("목"):
-                        목번호 = 목.findtext("목번호", "").strip().replace(".", "")
-                        for m in 목.findall("목내용"):
-                            if m.text and find_word in m.text:
-                                덩어리별[find_word].append((조문식별자, 항번호, 호번호, 목번호, None))
 
         if not 덩어리별:
             continue
@@ -391,13 +410,13 @@ def extract_chunk(token, searchword):
     return token
 
 def extract_chunk_and_josa(token, searchword):
-    # 조사 및 접사 후보
-    suffix_list = ["으로", "이나", "과", "와", "을", "를", "이", "가", "나", "로", "은", "는"]
+    suffix_list = ["으로", "이나", "과", "와", "을", "를", "이", "가", "나", "로", "은", "는", "의", "등", "인"]
     pattern = re.compile(rf'([가-힣A-Za-z0-9]*{re.escape(searchword)}[가-힣A-Za-z0-9]*?)({"|".join(suffix_list)})?$')
     m = pattern.match(token)
     if m:
         return m.group(1), m.group(2)
     return token, None
+
 
 def group_locations(loc_list):
     from collections import defaultdict
