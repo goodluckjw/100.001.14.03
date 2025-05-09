@@ -1,4 +1,4 @@
-
+# 개정문에서 개별 적용은 됨. 그러나 출력 규칙을 아직 적용 못함. 
 import requests
 import xml.etree.ElementTree as ET
 from urllib.parse import quote
