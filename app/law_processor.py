@@ -82,15 +82,18 @@ def extract_chunks(text, keyword):
     return match.group(1) if match else None
 
 def format_location(loc):
-    조, 항, 호, 목, _ = loc
-    parts = [조]
-    if 항:
-        parts.append(f"제{항}항")
-    if 호:
-        parts.append(f"제{호}호")
-    if 목:
-        parts.append(f"{목}목")
+    # loc의 길이가 5보다 짧으면 None으로 채워서 unpack
+    padded = loc + (None,) * (5 - len(loc))
+    조, 항, 호, 목, 기타 = padded[:5]
+    parts = []
+    if 조: parts.append(f"{조}")
+    if 항: parts.append(f"{항}항")
+    if 호: parts.append(f"{호}호")
+    if 목: parts.append(f"{목}목")
+    # 기타(예: "조문내용", "항", "호", "목")가 있으면 붙임
+    if 기타: parts.append(str(기타))
     return "".join(parts)
+
 
 # 아래에 run_search_logic과 run_amendment_logic 삽입
 
