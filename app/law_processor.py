@@ -417,8 +417,7 @@ def run_amendment_logic(find_word, replace_word):
 
         tree = ET.fromstring(xml_data)
         articles = tree.findall(".//조문단위")
-        # 위치별 덩어리 추출
-        chunk_locs = []  # [(loc_str, chunk), ...] 순서대로
+        chunk_locs = []
 
         for article in articles:
             조번호 = article.findtext("조문번호", "").strip()
@@ -426,7 +425,6 @@ def run_amendment_logic(find_word, replace_word):
             조문식별자 = make_article_number(조번호, 조가지번호)
             조문내용 = article.findtext("조문내용", "") or ""
 
-            # 조문내용에서 덩어리 추출
             for chunk in find_chunks(조문내용, find_word):
                 loc_str = f"제{조번호}"
                 if 조가지번호:
@@ -468,20 +466,23 @@ def run_amendment_logic(find_word, replace_word):
         if not chunk_locs:
             continue
 
-        # 연속 그룹핑 및 출력
         문장들 = []
         prev_chunk = None
         group_locs = []
-        for loc, chunk in chunk_locs + [(None, None)]:  # 마지막 그룹 출력을 위해 dummy 추가
+        for loc, chunk in chunk_locs + [(None, None)]:
             if chunk == prev_chunk and prev_chunk is not None:
                 group_locs.append(loc)
             else:
                 if prev_chunk is not None:
-                    # 그룹 출력
                     각각 = "각각 " if len(group_locs) > 1 else ""
                     locs_str = ", ".join(group_locs)
-                    문장들.append(f'{locs_str} 중 "{prev_chunk}"을 {각각}"{prev_chunk.replace(find_word, replace_word)}"로 한다.')
-                # 새로운 그룹 시작
+                    # 조사 자동 적용
+                    조사 = 조사_을를(prev_chunk)
+                    바꿀_덩어리 = prev_chunk.replace(find_word, replace_word)
+                    바꿀_조사 = 조사_을를(바꿀_덩어리)
+                    문장들.append(
+                        f'{locs_str} 중 "{prev_chunk}"{조사} {각각}"{바꿀_덩어리}"{바꿀_조사}로 한다.'
+                    )
                 prev_chunk = chunk
                 group_locs = [loc] if loc else []
 
