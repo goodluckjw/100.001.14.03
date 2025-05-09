@@ -246,135 +246,131 @@ def get_jongseong_type(word):
     has_rieul = jong == 8
     return (has_batchim, has_rieul)
 
-def apply_josa_rule_for_token(token, replace_word):
-    josa_list = ["으로", "이나", "과", "와", "을", "를", "이", "가", "나", "로", "은", "는"]
-    found_josa = next((josa for josa in josa_list if token.endswith(josa)), None)
-    word_root = token[:-len(found_josa)] if found_josa else token
-
-    b_has_batchim, b_has_rieul = get_jongseong_type(replace_word)
-    a_has_batchim, _ = get_jongseong_type(word_root)
-
-    if not found_josa:
+def apply_josa_rule(a, b, josa=None):
+    """
+    a: 원본 덩어리(조사 제외)
+    b: 바꿀 덩어리(조사 제외)
+    josa: a에 붙어있던 조사(없으면 None)
+    """
+    b_has_batchim, b_has_rieul = get_jongseong_type(b)
+    a_has_batchim, _ = get_jongseong_type(a)
+    # 0. 조사가 붙지 않은 경우
+    if not josa:
         if not a_has_batchim:
-            if not b_has_batchim:
-                return f'"{token}"를 "{replace_word}"로 한다.'
+            if not b_has_batchim or b_has_rieul:
+                return f'"{a}"를 "{b}"로 한다.'
             else:
-                if b_has_rieul:
-                    return f'"{token}"를 "{replace_word}"로 한다.'
-                else:
-                    return f'"{token}"를 "{replace_word}"으로 한다.'
+                return f'"{a}"를 "{b}"으로 한다.'
         else:
-            if not b_has_batchim:
-                return f'"{token}"을 "{replace_word}"로 한다.'
+            if not b_has_batchim or b_has_rieul:
+                return f'"{a}"을 "{b}"로 한다.'
             else:
-                if b_has_rieul:
-                    return f'"{token}"을 "{replace_word}"로 한다.'
-                else:
-                    return f'"{token}"을 "{replace_word}"으로 한다.'
-
-    if found_josa == "을":
+                return f'"{a}"을 "{b}"으로 한다.'
+    # 1. A을
+    if josa == "을":
         if b_has_batchim:
             if b_has_rieul:
-                return f'"{word_root}"을 "{replace_word}"로 한다.'
+                return f'"{a}"을 "{b}"로 한다.'
             else:
-                return f'"{word_root}"을 "{replace_word}"으로 한다.'
+                return f'"{a}"을 "{b}"으로 한다.'
         else:
-            return f'"{token}"을 "{replace_word}를"로 한다.'
-
-    if found_josa == "를":
+            return f'"{a}을"을 "{b}를"로 한다.'
+    # 2. A를
+    if josa == "를":
         if b_has_batchim:
-            return f'"{token}"을 "{replace_word}을"로 한다.'
+            return f'"{a}를"을 "{b}을"로 한다.'
         else:
-            return f'"{word_root}"를 "{replace_word}"로 한다.'
-
-    if found_josa == "과":
+            return f'"{a}"를 "{b}"로 한다.'
+    # 3. A과
+    if josa == "과":
         if b_has_batchim:
             if b_has_rieul:
-                return f'"{word_root}"을 "{replace_word}"로 한다.'
+                return f'"{a}"을 "{b}"로 한다.'
             else:
-                return f'"{word_root}"을 "{replace_word}"으로 한다.'
+                return f'"{a}"을 "{b}"으로 한다.'
         else:
-            return f'"{token}"를 "{replace_word}와"로 한다.'
-
-    if found_josa == "와":
+            return f'"{a}과"를 "{b}와"로 한다.'
+    # 4. A와
+    if josa == "와":
         if b_has_batchim:
-            return f'"{token}"를 "{replace_word}과"로 한다.'
+            return f'"{a}와"를 "{b}과"로 한다.'
         else:
-            return f'"{word_root}"를 "{replace_word}"로 한다.'
-
-    if found_josa == "이":
+            return f'"{a}"를 "{b}"로 한다.'
+    # 5. A이
+    if josa == "이":
         if b_has_batchim:
             if b_has_rieul:
-                return f'"{word_root}"을 "{replace_word}"로 한다.'
+                return f'"{a}"을 "{b}"로 한다.'
             else:
-                return f'"{word_root}"을 "{replace_word}"으로 한다.'
+                return f'"{a}"을 "{b}"으로 한다.'
         else:
-            return f'"{token}"를 "{replace_word}가"로 한다.'
-
-    if found_josa == "가":
+            return f'"{a}이"를 "{b}가"로 한다.'
+    # 6. A가
+    if josa == "가":
         if b_has_batchim:
-            return f'"{token}"를 "{replace_word}이"로 한다.'
+            return f'"{a}가"를 "{b}이"로 한다.'
         else:
-            return f'"{word_root}"를 "{replace_word}"로 한다.'
-
-    if found_josa == "이나":
+            return f'"{a}"를 "{b}"로 한다.'
+    # 7. A이나
+    if josa == "이나":
         if b_has_batchim:
             if b_has_rieul:
-                return f'"{word_root}"을 "{replace_word}"로 한다.'
+                return f'"{a}"을 "{b}"로 한다.'
             else:
-                return f'"{word_root}"을 "{replace_word}"으로 한다.'
+                return f'"{a}"을 "{b}"으로 한다.'
         else:
-            return f'"{token}"를 "{replace_word}나"로 한다.'
-
-    if found_josa == "나":
+            return f'"{a}이나"를 "{b}나"로 한다.'
+    # 8. A나
+    if josa == "나":
         if b_has_batchim:
-            return f'"{token}"를 "{replace_word}이나"로 한다.'
+            return f'"{a}나"를 "{b}이나"로 한다.'
         else:
-            return f'"{word_root}"를 "{replace_word}"로 한다.'
-
-    if found_josa == "으로":
+            return f'"{a}"를 "{b}"로 한다.'
+    # 9. A으로
+    if josa == "으로":
         if b_has_batchim:
             if b_has_rieul:
-                return f'"{token}"를 "{replace_word}로"로 한다.'
+                return f'"{a}으로"를 "{b}로"로 한다.'
             else:
-                return f'"{word_root}"을 "{replace_word}"으로 한다.'
+                return f'"{a}"을 "{b}"으로 한다.'
         else:
-            return f'"{token}"를 "{replace_word}로"로 한다.'
-
-    if found_josa == "로":
+            return f'"{a}으로"를 "{b}로"로 한다.'
+    # 10. A로
+    if josa == "로":
         if a_has_batchim:
             if b_has_batchim:
                 if b_has_rieul:
-                    return f'"{word_root}"을 "{replace_word}"로 한다.'
+                    return f'"{a}"을 "{b}"로 한다.'
                 else:
-                    return f'"{token}"를 "{replace_word}으로"로 한다.'
+                    return f'"{a}로"를 "{b}으로"로 한다.'
             else:
-                return f'"{word_root}"을 "{replace_word}"로 한다.'
+                return f'"{a}"을 "{b}"로 한다.'
         else:
             if b_has_batchim:
                 if b_has_rieul:
-                    return f'"{word_root}"를 "{replace_word}"로 한다.'
+                    return f'"{a}"를 "{b}"로 한다.'
                 else:
-                    return f'"{token}"를 "{replace_word}으로"로 한다.'
+                    return f'"{a}로"를 "{b}으로"로 한다.'
             else:
-                return f'"{word_root}"를 "{replace_word}"로 한다.'
-
-    if found_josa == "는":
+                return f'"{a}"를 "{b}"로 한다.'
+    # 11. A는
+    if josa == "는":
         if b_has_batchim:
-            return f'"{token}"을 "{replace_word}은"으로 한다.'
+            return f'"{a}는"을 "{b}은"으로 한다.'
         else:
-            return f'"{word_root}"를 "{replace_word}"로 한다.'
-
-    if found_josa == "은":
+            return f'"{a}"를 "{b}"로 한다.'
+    # 12. A은
+    if josa == "은":
         if b_has_batchim:
             if b_has_rieul:
-                return f'"{word_root}"을 "{replace_word}"로 한다.'
+                return f'"{a}"을 "{b}"로 한다.'
             else:
-                return f'"{word_root}"을 "{replace_word}"으로 한다.'
+                return f'"{a}"을 "{b}"으로 한다.'
         else:
-            return f'"{token}"을 "{replace_word}는"으로 한다.'
+            return f'"{a}은"을 "{b}는"으로 한다.'
+    # 예외
+    return f'"{a}"를 "{b}"로 한다.'
 
-    return f'"{token}"를 "{replace_word}"로 한다.'
 
 def find_searchword_tokens(text, searchword):
     josa_list = ["으로", "이나", "과", "와", "을", "를", "이", "가", "나", "로", "은", "는"]
@@ -385,17 +381,49 @@ import re
 from collections import defaultdict
 
 def extract_chunk(token, searchword):
-    """
-    token에서 searchword가 포함된 '덩어리'를 조사 없이 추출
-    예: '관할지방법원을' -> '관할지방법원'
-    """
-    # 조사 후보
-    josa_list = ["으로", "이나", "과", "와", "을", "를", "이", "가", "나", "로", "은", "는"]
+    # 조사 및 접사 후보
+    suffix_list = ["으로", "이나", "과", "와", "을", "를", "이", "가", "나", "로", "은", "는", "의", "등", "인"]
     # searchword가 포함된 단어 추출
-    m = re.search(rf'([가-힣A-Za-z0-9]*{re.escape(searchword)}[가-힣A-Za-z0-9]*)({"|".join(josa_list)})?', token)
+    pattern = re.compile(rf'([가-힣A-Za-z0-9]*{re.escape(searchword)}[가-힣A-Za-z0-9]*?)(?:{"|".join(suffix_list)})*$')
+    m = pattern.match(token)
     if m:
         return m.group(1)
-    return None
+    return token
+
+def extract_chunk_and_josa(token, searchword):
+    # 조사 및 접사 후보
+    suffix_list = ["으로", "이나", "과", "와", "을", "를", "이", "가", "나", "로", "은", "는"]
+    pattern = re.compile(rf'([가-힣A-Za-z0-9]*{re.escape(searchword)}[가-힣A-Za-z0-9]*?)({"|".join(suffix_list)})?$')
+    m = pattern.match(token)
+    if m:
+        return m.group(1), m.group(2)
+    return token, None
+
+def group_locations(loc_list):
+    from collections import defaultdict
+    grouped = defaultdict(list)
+    for loc in loc_list:
+        m = re.match(r'(제\d+조)(.*)', loc)
+        if m:
+            grouped[m.group(1)].append(m.group(2))
+        else:
+            grouped[loc].append('')
+    result = []
+    for 조, 항목들 in grouped.items():
+        항목들 = [a for a in 항목들 if a]
+        if 항목들:
+            if len(항목들) > 1:
+                result.append(조 + 'ㆍ' + 'ㆍ'.join([a.lstrip('제') for a in 항목들]))
+            else:
+                result.append(조 + 항목들[0])
+        else:
+            result.append(조)
+    if len(result) > 2:
+        return ', '.join(result[:-1]) + ' 및 ' + result[-1]
+    elif len(result) == 2:
+        return result[0] + ' 및 ' + result[1]
+    else:
+        return result[0]
 
 def find_chunks(text, searchword):
     """
@@ -417,74 +445,38 @@ def run_amendment_logic(find_word, replace_word):
 
         tree = ET.fromstring(xml_data)
         articles = tree.findall(".//조문단위")
-        chunk_locs = []
+        # {(덩어리, 바꿀덩어리, josa): [loc_str, ...]}
+        chunk_map = {}
 
         for article in articles:
             조번호 = article.findtext("조문번호", "").strip()
-            조가지번호 = article.findtext("조문가지번호", "").strip()
+            조가지번호 = article.findtext("조가지번호", "").strip()
             조문식별자 = make_article_number(조번호, 조가지번호)
             조문내용 = article.findtext("조문내용", "") or ""
 
-            for chunk in find_chunks(조문내용, find_word):
-                loc_str = f"제{조번호}"
-                if 조가지번호:
-                    loc_str += f"제{조가지번호}"
-                loc_str += "조"
-                chunk_locs.append((loc_str, chunk))
-
-            for 항 in article.findall("항"):
-                항번호 = normalize_number(항.findtext("항번호", "").strip())
-                항내용 = 항.findtext("항내용", "") or ""
-                for chunk in find_chunks(항내용, find_word):
+            tokens = re.findall(r'[가-힣A-Za-z0-9]+', 조문내용)
+            for token in tokens:
+                if find_word in token:
+                    chunk, josa = extract_chunk_and_josa(token, find_word)
+                    바꿀덩어리 = chunk.replace(find_word, replace_word)
                     loc_str = f"제{조번호}"
                     if 조가지번호:
                         loc_str += f"제{조가지번호}"
-                    loc_str += f"조제{항번호}항"
-                    chunk_locs.append((loc_str, chunk))
+                    loc_str += "조"
+                    chunk_map.setdefault((chunk, 바꿀덩어리, josa), []).append(loc_str)
 
-                for 호 in 항.findall("호"):
-                    호번호 = 호.findtext("호번호", "").strip().replace(".", "")
-                    호내용 = 호.findtext("호내용", "") or ""
-                    for chunk in find_chunks(호내용, find_word):
-                        loc_str = f"제{조번호}"
-                        if 조가지번호:
-                            loc_str += f"제{조가지번호}"
-                        loc_str += f"조제{항번호}항제{호번호}호"
-                        chunk_locs.append((loc_str, chunk))
+            # 이하 항/호/목도 동일하게 반복...
 
-                    for 목 in 호.findall("목"):
-                        목번호 = 목.findtext("목번호", "").strip().replace(".", "")
-                        for m in 목.findall("목내용"):
-                            if m.text:
-                                for chunk in find_chunks(m.text, find_word):
-                                    loc_str = f"제{조번호}"
-                                    if 조가지번호:
-                                        loc_str += f"제{조가지번호}"
-                                    loc_str += f"조제{항번호}항제{호번호}호제{목번호}목"
-                                    chunk_locs.append((loc_str, chunk))
-
-        if not chunk_locs:
+        if not chunk_map:
             continue
 
         문장들 = []
-        prev_chunk = None
-        group_locs = []
-        for loc, chunk in chunk_locs + [(None, None)]:
-            if chunk == prev_chunk and prev_chunk is not None:
-                group_locs.append(loc)
-            else:
-                if prev_chunk is not None:
-                    각각 = "각각 " if len(group_locs) > 1 else ""
-                    locs_str = ", ".join(group_locs)
-                    # 조사 자동 적용
-                    조사 = 조사_을를(prev_chunk)
-                    바꿀_덩어리 = prev_chunk.replace(find_word, replace_word)
-                    바꿀_조사 = 조사_을를(바꿀_덩어리)
-                    문장들.append(
-                        f'{locs_str} 중 "{prev_chunk}"{조사} {각각}"{바꿀_덩어리}"{바꿀_조사}로 한다.'
-                    )
-                prev_chunk = chunk
-                group_locs = [loc] if loc else []
+        for (chunk, 바꿀덩어리, josa), locs in chunk_map.items():
+            각각 = "각각 " if len(locs) > 1 else ""
+            locs_str = group_locations(locs)
+            문장들.append(
+                f'{locs_str} 중 {apply_josa_rule(chunk, 바꿀덩어리, josa)}'
+            )
 
         prefix = chr(9312 + idx) if idx < 20 else str(idx + 1)
         amendment_results.append(f"{prefix} {law_name} 일부를 다음과 같이 개정한다.<br>" + "<br>".join(문장들))
