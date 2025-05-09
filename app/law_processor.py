@@ -231,26 +231,28 @@ def run_amendment_logic(find_word, replace_word):
     return amendment_results if amendment_results else ["⚠️ 개정 대상 조문이 없습니다."]
 
 
+import re
+
 def get_jongseong_type(word):
-    # 한글 완성형 기준: 0xAC00 ~ 0xD7A3
     last_char = word[-1]
     code = ord(last_char)
     if not (0xAC00 <= code <= 0xD7A3):
-        return (False, False)  # 한글이 아니면 받침 없음
+        return (False, False)
     jong = (code - 0xAC00) % 28
     has_batchim = jong != 0
     has_rieul = jong == 8
     return (has_batchim, has_rieul)
 
 def apply_josa_rule(find_word, replace_word):
-    josa_list = ["으로", "이나", "나", "로", "을", "를", "과", "와", "이", "가", "은", "는"]
-    found_josa = next((josa for josa in josa_list if find_word.endswith(josa)), "")
+    # 조사 목록(긴 것부터)
+    josa_list = ["으로", "이나", "과", "와", "을", "를", "이", "가", "나", "로", "은", "는"]
+    found_josa = next((josa for josa in josa_list if find_word.endswith(josa)), None)
     word_root = find_word[:-len(found_josa)] if found_josa else find_word
 
     b_has_batchim, b_has_rieul = get_jongseong_type(replace_word)
     a_has_batchim, _ = get_jongseong_type(word_root)
 
-    # 규칙별 분기
+    # 규칙 적용
     if found_josa == "을":
         if b_has_batchim:
             if b_has_rieul:
@@ -258,11 +260,11 @@ def apply_josa_rule(find_word, replace_word):
             else:
                 return f'"{find_word}"을 "{replace_word}"으로 한다.'
         else:
-            return f'"{find_word}"을 "{replace_word}를"로 한다.'
+            return f'"{find_word}을"을 "{replace_word}를"로 한다.'
 
     elif found_josa == "를":
         if b_has_batchim:
-            return f'"{find_word}"를 "{replace_word}을"로 한다.'
+            return f'"{find_word}를"을 "{replace_word}을"로 한다.'
         else:
             return f'"{word_root}"를 "{replace_word}"로 한다.'
 
@@ -273,11 +275,11 @@ def apply_josa_rule(find_word, replace_word):
             else:
                 return f'"{find_word}"을 "{replace_word}"으로 한다.'
         else:
-            return f'"{find_word}"과 "{replace_word}와"로 한다.'
+            return f'"{find_word}과"를 "{replace_word}와"로 한다.'
 
     elif found_josa == "와":
         if b_has_batchim:
-            return f'"{find_word}"와 "{replace_word}과"로 한다.'
+            return f'"{find_word}와"를 "{replace_word}과"로 한다.'
         else:
             return f'"{word_root}"를 "{replace_word}"로 한다.'
 
@@ -288,11 +290,11 @@ def apply_josa_rule(find_word, replace_word):
             else:
                 return f'"{find_word}"을 "{replace_word}"으로 한다.'
         else:
-            return f'"{find_word}"이 "{replace_word}가"로 한다.'
+            return f'"{find_word}이"를 "{replace_word}가"로 한다.'
 
     elif found_josa == "가":
         if b_has_batchim:
-            return f'"{find_word}"가 "{replace_word}이"로 한다.'
+            return f'"{find_word}가"를 "{replace_word}이"로 한다.'
         else:
             return f'"{word_root}"를 "{replace_word}"로 한다.'
 
@@ -303,22 +305,22 @@ def apply_josa_rule(find_word, replace_word):
             else:
                 return f'"{find_word}"을 "{replace_word}"으로 한다.'
         else:
-            return f'"{find_word}"이나 "{replace_word}나"로 한다.'
+            return f'"{find_word}이나"를 "{replace_word}나"로 한다.'
 
     elif found_josa == "나":
         if b_has_batchim:
-            return f'"{find_word}"나 "{replace_word}이나"로 한다.'
+            return f'"{find_word}나"를 "{replace_word}이나"로 한다.'
         else:
             return f'"{word_root}"를 "{replace_word}"로 한다.'
 
     elif found_josa == "으로":
         if b_has_batchim:
             if b_has_rieul:
-                return f'"{find_word}"으로 "{replace_word}로"로 한다.'
+                return f'"{find_word}으로"를 "{replace_word}로"로 한다.'
             else:
                 return f'"{find_word}"을 "{replace_word}"으로 한다.'
         else:
-            return f'"{find_word}"으로 "{replace_word}로"로 한다.'
+            return f'"{find_word}으로"를 "{replace_word}로"로 한다.'
 
     elif found_josa == "로":
         if a_has_batchim:
@@ -326,7 +328,7 @@ def apply_josa_rule(find_word, replace_word):
                 if b_has_rieul:
                     return f'"{word_root}"을 "{replace_word}"로 한다.'
                 else:
-                    return f'"{find_word}"로 "{replace_word}으로"로 한다.'
+                    return f'"{find_word}로"를 "{replace_word}으로"로 한다.'
             else:
                 return f'"{word_root}"을 "{replace_word}"로 한다.'
         else:
@@ -334,7 +336,7 @@ def apply_josa_rule(find_word, replace_word):
                 if b_has_rieul:
                     return f'"{word_root}"를 "{replace_word}"로 한다.'
                 else:
-                    return f'"{find_word}"로 "{replace_word}으로"로 한다.'
+                    return f'"{find_word}로"를 "{replace_word}으로"로 한다.'
             else:
                 return f'"{word_root}"를 "{replace_word}"로 한다.'
 
@@ -345,14 +347,71 @@ def apply_josa_rule(find_word, replace_word):
             else:
                 return f'"{find_word}"을 "{replace_word}"으로 한다.'
         else:
-            return f'"{find_word}"은 "{replace_word}는"으로 한다.'
+            return f'"{find_word}은"을 "{replace_word}는"으로 한다.'
 
     elif found_josa == "는":
         if b_has_batchim:
-            return f'"{find_word}"는 "{replace_word}은"으로 한다.'
+            return f'"{find_word}는"을 "{replace_word}은"으로 한다.'
         else:
             return f'"{word_root}"를 "{replace_word}"로 한다.'
 
     else:
-        # 조사 없는 경우 기본 출력
-        return f'"{word_root}"를 "{replace_word}"로 한다.'
+        # 조사 없는 경우: "A"를 "B"로 한다.
+        return f'"{find_word}"를 "{replace_word}"로 한다.'
+
+# run_amendment_logic 내부에서 문장 조립 부분만 수정
+def run_amendment_logic(find_word, replace_word):
+    amendment_results = []
+    for idx, law in enumerate(get_law_list_from_api(find_word)):
+        law_name = law["법령명"]
+        mst = law["MST"]
+        xml_data = get_law_text_by_mst(mst)
+        if not xml_data:
+            continue
+
+        tree = ET.fromstring(xml_data)
+        articles = tree.findall(".//조문단위")
+        덩어리별 = defaultdict(list)
+
+        for article in articles:
+            조번호 = article.findtext("조문번호", "").strip()
+            조가지번호 = article.findtext("조문가지번호", "").strip()
+            조문식별자 = make_article_number(조번호, 조가지번호)
+            조문내용 = article.findtext("조문내용", "") or ""
+
+            if find_word in 조문내용:
+                덩어리별[find_word].append((조문식별자, None, None, None, None))
+
+            for 항 in article.findall("항"):
+                항번호 = normalize_number(항.findtext("항번호", "").strip())
+                항내용 = 항.findtext("항내용", "") or ""
+                if find_word in 항내용:
+                    덩어리별[find_word].append((조문식별자, 항번호, None, None, None))
+
+                for 호 in 항.findall("호"):
+                    호번호 = 호.findtext("호번호", "").strip().replace(".", "")
+                    호내용 = 호.findtext("호내용", "") or ""
+                    if find_word in 호내용:
+                        덩어리별[find_word].append((조문식별자, 항번호, 호번호, None, None))
+
+                    for 목 in 호.findall("목"):
+                        목번호 = 목.findtext("목번호", "").strip().replace(".", "")
+                        for m in 목.findall("목내용"):
+                            if m.text and find_word in m.text:
+                                덩어리별[find_word].append((조문식별자, 항번호, 호번호, 목번호, None))
+
+        if not 덩어리별:
+            continue
+
+        문장들 = []
+        for 덩어리, locs in 덩어리별.items():
+            각각 = "각각 " if len(locs) > 1 else ""
+            loc_str = ", ".join([format_location(l) for l in locs[:-1]]) + (" 및 " if len(locs) > 1 else "") + format_location(locs[-1])
+
+            # apply_josa_rule에서 완성된 문장 반환
+            문장들.append(f'{loc_str} 중 {apply_josa_rule(find_word, replace_word)}')
+
+        prefix = chr(9312 + idx) if idx < 20 else str(idx + 1)
+        amendment_results.append(f"{prefix} {law_name} 일부를 다음과 같이 개정한다.<br>" + "<br>".join(문장들))
+
+    return amendment_results if amendment_results else ["⚠️ 개정 대상 조문이 없습니다."]
